@@ -4,18 +4,14 @@
 # standard library
 
 # internal
-from .base_model import BaseModel
 from dataloader.dataloader import DataLoader
-
 # external
 import tensorflow as tf
-from tensorflow_examples.models.pix2pix import pix2pix
 
 
-class UNet(BaseModel):
+class Model:
     """Unet Model Class"""
     def __init__(self, config):
-        super().__init__(config)
         self.base_model = tf.keras.applications.MobileNetV2(input_shape=self.config.model.input, include_top=False)
         self.model = None
         self.output_channels = self.config.model.output
@@ -189,16 +185,3 @@ class UNet(BaseModel):
             self.model.fit(...)
 
         parameter_server_strategy = tf.distribute.experimental.ParameterServerStrategy()
-
-        os.environ["TF_CONFIG"] = json.dumps(
-            {
-                "cluster": {
-                    "worker": ["host1:port", "host2:port", "host3:port"],
-                    "ps":  ["host4:port", "host5:port"]
-                },
-                "task": {
-                    "type": "worker",
-                    "index": 1
-                }
-            }
-        )

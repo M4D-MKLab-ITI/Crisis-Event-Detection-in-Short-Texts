@@ -3,19 +3,17 @@
 
 CFG = {
     "data": {
-        "path": "oxford_iiit_pet:3.*.*",
-        "image_size": 128,
-        "load_with_info": True
+        "path": "/home/pantelisk/projects/event/data/data.csv",
+        "setting": "binary"  # "binary", "info_type"
     },
     "train": {
         "batch_size": 64,
-        "buffer_size": 1000,
-        "epoches": 20,
-        "val_subsplits": 5,
+        "early_stop": 10,
+        "val_set": 5,  # percent
         "optimizer": {
-            "type": "adam"
+            "type": "adam",
+            "lr": 0.001
         },
-        "metrics": ["accuracy"]
     },
     "model": {
         "input": [128, 128, 3],
