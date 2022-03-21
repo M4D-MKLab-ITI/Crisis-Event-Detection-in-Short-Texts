@@ -10,7 +10,7 @@ def crt_folder(path):
     pass
 
 
-def graph(history, fig_name="plots/losses.png"):
+def graph(history, log_dir, fig_name):
     loss_train = history['loss']
     loss_val = history['val_loss']
     epoc = range(1, len(loss_train) + 1)
@@ -21,5 +21,5 @@ def graph(history, fig_name="plots/losses.png"):
     plt.ylabel('Loss')
     plt.legend()
     fig = plt.gcf()
-    fig.savefig(fig_name)
+    fig.savefig("experiments/" + log_dir + fig_name)
     plt.clf()

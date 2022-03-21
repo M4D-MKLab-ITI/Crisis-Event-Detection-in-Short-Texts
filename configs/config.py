@@ -3,16 +3,16 @@
 
 CFG = {
     "data": {
-        "experiment_name": "experiment",
-        "data_path": "data/data.csv",
-        "emb_path": "embeddings/GoogleNews-vectors-negative300.bin', binary=True",
+        "experiment_name": "experiment1",
+        "data_path": "../data/data.csv",
+        "emb_path": "../embeddings/GoogleNews-vectors-negative300.bin",
         "setting": "binary",  # "binary", "info_type"
         "test_size": 0.2,
         "split_random_state": 20,
         "balancing": False,  # False, "oversampling", "undersampling"
     },
     "train": {
-        "seeds": [1, 2, 3, 4, 5, 6, 7, 8, 9, 10],
+        "seeds": [1],  #, 2, 3, 4, 5, 6, 7, 8, 9, 10],
         "batch_size": 256,
         "epochs": 400,
         "early_stop": 10,  # int [0: no early stopping]

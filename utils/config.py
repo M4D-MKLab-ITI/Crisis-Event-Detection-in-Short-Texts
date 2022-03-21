@@ -2,7 +2,7 @@
 """Config class"""
 
 import json
-import helpers
+from . import helpers
 
 
 class Config:
@@ -33,8 +33,8 @@ class Config:
     @classmethod
     def from_json(cls, cfg):
         """Creates config from json"""
-        params = json.loads(json.dumps(cfg), object_hook=HelperObject)
-        return cls(params.data, params.train, params.model)
+        params = json.loads(json.dumps(cfg))  #, object_hook=HelperObject)
+        return cls(params['data'], params['train'], params['model'])
 
     def create_folders(self):
         experiment_name = self.data['experiment_name']

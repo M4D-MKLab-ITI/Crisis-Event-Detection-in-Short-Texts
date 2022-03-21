@@ -1,15 +1,17 @@
 # keras layers
 import keras
 from keras.models import Model
-from keras.layers import Dense, Conv1D, MaxPooling1D, Flatten
+from keras.layers import Dense, Conv1D, MaxPooling1D, Flatten, AveragePooling1D
 from keras.layers import Embedding, Dropout, Input
+from tfdeterminism import patch
+patch()
 
 # custom keras layers
 from keras_multi_head import MultiHeadAttention
 from keras_layer_normalization import LayerNormalization
 
 # my modules
-from my_layers import p_w_ff, Positional_Encoding
+from .my_layers import p_w_ff, Positional_Encoding
 
 
 def self_attention_head(emb):
@@ -49,11 +51,13 @@ def mcnn(input_shape, vocab_size, n_class, embedding_dim, embedding_matrix, ad=F
     if ad:
         emb = self_attention_head(emb)
 
-    ecnn1 = enhanced_cnn_stack(emb, 3, input_shape, dr=4)
-    ecnn2 = enhanced_cnn_stack(emb, 4, input_shape, dr=2)
-    ecnn3 = enhanced_cnn_stack(emb, 5, input_shape, dr=1)
+    #ecnn1 = enhanced_cnn_stack(emb, 3, input_shape, dr=4)
+    #ecnn2 = enhanced_cnn_stack(emb, 4, input_shape, dr=2)
+    #ecnn3 = enhanced_cnn_stack(emb, 5, input_shape, dr=1)
 
-    model = keras.layers.concatenate([ecnn1, ecnn2, ecnn3])
+    #model = keras.layers.concatenate([ecnn1, ecnn2, ecnn3])
+    model = AveragePooling1D(pool_size=input_shape)(emb)
+    model = Flatten()(model)
 
     model = Dropout(0.5)(model)
     model = Dense(n_class, activation='softmax')(model)

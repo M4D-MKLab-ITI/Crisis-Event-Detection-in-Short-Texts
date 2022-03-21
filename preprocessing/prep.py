@@ -5,7 +5,7 @@ import sklearn
 import numpy as np
 import tensorflow as tf
 from collections import Counter
-import text
+from . import text
 
 """
 All functionality related to preprocessing
@@ -105,7 +105,7 @@ class Preprocessor:
             self.l_enc.fit(labels)
             labels = self.l_enc.transform(labels)
         self.oh_enc = OneHotEncoder(handle_unknown='ignore')
-        labels = self.oh_enc.fit_transform(labels.reshape(-1, 1))
+        labels = self.oh_enc.fit_transform(labels.reshape(-1, 1)).toarray()
         # self.to_pickle["l_enc"] = self.l_enc
         # self.to_pickle["oh_enc"] = self.oh_enc
         return tweets, labels

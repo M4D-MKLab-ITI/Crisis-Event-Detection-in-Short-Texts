@@ -9,7 +9,7 @@ class Eval:
     exp_repeats: number of experiments with different seeds [for results averaging]
     n_class: number of output classes for adjusting auc metric
     """
-    def __init__(self, exp_repeats, n_class):
+    def __init__(self, exp_repeats, n_class, log_dir):
         # if exp_repeats is not 1 --> activate scoreboard for results averaging
         # scoreboard is not needed for a single seeded experiment
         if exp_repeats != 1:
@@ -17,13 +17,7 @@ class Eval:
                           'acc': [], 'acc_std': 0, 'auc': [], 'auc_std': 0, 'tr_loss': [], 'val_loss': []}
         self.exp_repeats = exp_repeats
         self.n_class = n_class
-        self.seed = None  # seed updates in each run
-
-    """
-    seed setter function
-    """
-    def set_seed(self, new_seed):
-        self.seed = new_seed
+        self.log_dir = log_dir
 
     """
     core evaluation function
@@ -31,7 +25,7 @@ class Eval:
     2. calculating metrics
     3. saving results
     """
-    def evaluation(self, x_test, y_test, history, seed=0, model=None):
+    def evaluation(self, x_test, y_test, history, seed, model):
         # prediction phase
         pr = model.predict(x_test)
         pred = np.argmax(pr, axis=1)
@@ -60,9 +54,9 @@ class Eval:
             else:
                 max_f1 = max(self.scoreboard["f1"])
             if max_f1 < report["macro avg"]["f1-score"]:
-                model.save('reports/saved_model')
+                model.save('experiments/' + self.log_dir + '/reports/saved_model')
         else:
-            model.save('reports/saved_model')
+            model.save('experiments/' + self.log_dir + '/reports/saved_model')
 
         # saving results
         self.save_results(pred, ytrue, report, str(seed))
@@ -82,8 +76,8 @@ class Eval:
     """
     # TODO: call scoreboard result on evaluation func on the last experiment
     def save_results(self, pred=None, ytrue=None, report=None, seed=""):
-        prediction_file = "pred/predictions.csv"
-        report_file = "reports/report.csv"
+        prediction_file = 'experiments/' + self.log_dir + '/pred/predictions.csv'
+        report_file = 'experiments/' + self.log_dir + '/reports/report.csv'
         if self.exp_repeats != 1:
             prediction_file = prediction_file.replace(".csv", seed + ".csv")
             report_file = report_file.replace(".csv", seed + ".csv")

@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from configs.config import CFG
-from model.model import Model
+from model.model_ import Model
 from loaders import dataloader
 from utils.config import Config
 from preprocessing import prep
@@ -9,7 +9,6 @@ from utils import helpers
 
 import tensorflow as tf
 import numpy as np
-import gensim.models
 import random
 import os
 from tfdeterminism import patch
@@ -23,18 +22,21 @@ def set_seeds(seed):
     os.environ["PYTHONHASHSEED"] = str(seed)
 
 
-def op(model, evaluator, seeds,
+def op(model_cls, evaluator, seeds, experiment_name,
              xtrain, ytrain, xtest, ytest):
 
     for i, seed in enumerate(seeds):
         with tf.Session() as sess:
             print("experiment " + str(i + 1) + " with seed " + str(seed))
             set_seeds(seed)
+            model_cls.set_seeds(seed)
             # training and evaluation
-            model = model.build_model()
-            history = model.training(xtrain, ytrain)
-            evaluator(xtest, ytest, history.history, seed=seed, model=model)
-            helpers.graph(history.history, fig_name="plots/losses" + str(seed) + ".png")
+            model_cls.build_model()
+            model_cls.vis_model()
+            model_cls.compile_model()
+            history = model_cls.training(xtrain, ytrain)
+            evaluator.evaluation(xtest, ytest, history.history, seed=seed, model=model_cls.model)
+            helpers.graph(history.history, log_dir=experiment_name, fig_name="/plots/losses" + str(seed) + ".png")
         tf.reset_default_graph()
     if evaluator.exp_repeats != 1:
         evaluator.save_results()
@@ -74,19 +76,21 @@ def main_pipeline():
     loading embedding vectors
     building embedding matrix
     """
-    w2v_model = gensim.models.KeyedVectors.load_word2vec_format(config.data['emb_path'],
-                                                                binary=True)
+    w2v_model = d_l.load_embeddings()
     embedding_matrix = d_l.build_embedding_matrix(w2v_model=w2v_model,
                                                   tokenizer=tokenizer)
 
     """training"""
     model = Model(config=config, emb_mat=embedding_matrix)
+
     evaluator = Eval(exp_repeats=config.get_number_of_experiments(),
-                     n_class=config.get_output_size())
+                     n_class=config.get_output_size(),
+                     log_dir=config.data['experiment_name'])
     seeds = config.train['seeds']
     op(model, evaluator, seeds,
-             xtrain, ytrain,
-             xtest, ytest)
+       config.data["experiment_name"],
+       xtrain, ytrain,
+       xtest, ytest)
 
 
 if __name__ == '__main__':
