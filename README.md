@@ -9,4 +9,4 @@ To do that, we leverage Transformer Self Attention Encoders that are able to ext
 Read more about Transformers and their Self Attention Encoder in the original paper ["Attention is all you need"](https://arxiv.org/abs/1706.03762) and this educational [blog post](https://jalammar.github.io/illustrated-transformer/).
 
 The following figure illustrates the architecture of the best performing model, AD-MCNN:
-![AD-MCNN_img](AD-MCNN.png "AD-MCNN")
+![AD-MCNN_img](admcnn.png "AD-MCNN")
