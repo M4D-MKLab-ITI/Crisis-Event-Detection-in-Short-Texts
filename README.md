@@ -13,4 +13,3 @@ The following figure illustrates the architecture of the best performing model, 
 <p align="center">
   <img src="admcnn.png" />
 </p>
-![AD-MCNN_img](admcnn.png "AD-MCNN")
