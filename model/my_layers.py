@@ -2,8 +2,7 @@ import keras
 import numpy as np
 import tensorflow as tf
 from keras.layers import Dense
-from tfdeterminism import patch
-patch()
+
 
 
 class Positional_Encoding(keras.layers.Layer):

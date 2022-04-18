@@ -6,23 +6,24 @@ import tensorflow as tf
 import keras
 from keras.utils.vis_utils import plot_model
 from . import architectures as arch
-from tfdeterminism import patch
-patch()
+
 
 
 class Model:
 
     def __init__(self, config, emb_mat):
         """
-         Model Class
+        Model Class
 
         :param Any config: Configuration Class
         :param Any emb_mat: Embedding Matrix
         """
         self.experiment_name = config.data['experiment_name']
+        self.augmentation = config.data['augmentation']
 
         self.base_model = None
         self.model = None
+        self.model_name = config.model['architecture_name']
         self.n_class = config.get_output_size()
         self.embedding_dim = config.model['embedding_dim']
         self.sequence_len = config.model['seq_len']
@@ -43,8 +44,22 @@ class Model:
         """
         builds model and adds it to the respective class property
         """
-        self.model = arch.ad_mcnn(self.sequence_len, self.vocab_size, self.n_class,
+        model_name = self.model_name
+        if model_name == 'MCNN':
+            self.model = arch.mcnn(self.sequence_len, self.vocab_size, self.n_class,
                                   self.embedding_dim, self.embedding_matrix)
+        elif model_name == 'MCNN-MA':
+            self.model = arch.mcnn_ma(self.sequence_len, self.vocab_size, self.n_class,
+                                      self.embedding_dim, self.embedding_matrix)
+        elif model_name == 'AD-MCNN':
+            self.model = arch.ad_mcnn(self.sequence_len, self.vocab_size, self.n_class,
+                                  self.embedding_dim, self.embedding_matrix)
+        elif model_name == 'AD-PGRU':
+            self.model = arch.ad_pgru(self.sequence_len, self.vocab_size, self.n_class,
+                                      self.embedding_dim, self.embedding_matrix)
+        elif model_name == 'STACKED':
+            self.model = arch.stacked_sae(self.sequence_len, self.vocab_size, self.n_class,
+                                      self.embedding_dim, self.embedding_matrix)
 
     def set_seeds(self, seed):
         random.seed(seed)
@@ -62,11 +77,16 @@ class Model:
         opt = self.opt_select()
         self.model.compile(optimizer=opt, loss=self.loss, metrics=['accuracy'])
 
-    def training(self, x_train, y_train):
+    def training(self, x_train, y_train, xval, yval):
         # callbacks setup
         if self.early_stop:
             early_stop = tf.keras.callbacks.EarlyStopping(monitor='val_loss', patience=self.early_stop)
-            history = self.model.fit(x_train, y_train, batch_size=self.batch_size,
+            if self.augmentation:
+                history = self.model.fit(x_train, y_train, batch_size=self.batch_size,
+                                    epochs=self.epochs, validation_data=(xval, yval), verbose=1, shuffle=True,
+                                    callbacks=[early_stop])
+            else:
+                history = self.model.fit(x_train, y_train, batch_size=self.batch_size,
                                      epochs=self.epochs, validation_split=self.val_split, verbose=1, shuffle=True,
                                      callbacks=[early_stop])
         else:

@@ -29,9 +29,10 @@ class Preprocessor:
     Tokenizes and pads the input.
     if called only for test: train_data is None --> so it returns None xtrain var.
     """
-    def tokens(self, test_data, train_data=None):
+    def tokens(self, test_data, train_data=None, val_data=None):
         tokenizer = self.tokenizer
         xtrain = None
+        xval = None
         if train_data is not None:
             tokenizer = tf.keras.preprocessing.text.Tokenizer(oov_token='<OOV>')
             tokenizer.fit_on_texts(train_data)
@@ -41,9 +42,12 @@ class Preprocessor:
             # self.to_pickle["tokenizer"] = tokenizer
             #self.to_pickle["maxim"] = self.maxim
             #self.de_serialize_inference_objects(False)
+        if val_data is not None:
+            val_indexes = tokenizer.texts_to_sequences(val_data)
+            xval = tf.keras.preprocessing.sequence.pad_sequences(val_indexes, maxlen=self.maxim)
         test_indexes = tokenizer.texts_to_sequences(test_data)
         xtest = tf.keras.preprocessing.sequence.pad_sequences(test_indexes, maxlen=self.maxim)
-        return tokenizer, xtrain, xtest
+        return tokenizer, xtrain, xtest, xval
 
     """
     Balancing dataset with Random under/over sampling
@@ -68,23 +72,35 @@ class Preprocessor:
         split = sklearn.model_selection.StratifiedShuffleSplit(n_splits=1,
                                                                test_size=self.config.data["test_size"],
                                                                random_state=self.config.data['split_random_state'])
-        train_idx, test_idx = list(split.split(tweets, labels))[0]
-        xtrain = tweets[train_idx]
-        ytrain = labels[train_idx]
-        xtest = tweets[test_idx]
-        ytest = labels[test_idx]
-        return xtrain, ytrain, xtest, ytest
+        self.train_idx, self.test_idx = list(split.split(tweets, labels))[0]
+        xtrain = tweets[self.train_idx]
+        ytrain = labels[self.train_idx]
+        xtest = tweets[self.test_idx]
+        ytest = labels[self.test_idx]
+        xval = None
+        yval = None
+        if self.config.data['augmentation']:
+            split_horizontally_idx = int(xtrain.shape[0] * 0.9)
+            xval = xtrain[split_horizontally_idx:]
+            xtrain = xtrain[:split_horizontally_idx]
+            yval = ytrain[split_horizontally_idx:, :]
+            ytrain = ytrain[:split_horizontally_idx, :]
+        return xtrain, ytrain, xtest, ytest, xval, yval
 
     def transform_crisis_lex(self):
         tweets = self.data.iloc[:, 1].to_numpy()  # tweets to nd array
         if self.setting == "info_source":
-            labels = self.data.iloc[:, 2]
+            labels = self.data.iloc[:, 2].to_numpy()
         elif self.setting == "info_type":
-            labels = self.data.iloc[:, 3]
+            labels = self.data.iloc[:, 3].to_numpy()
         else:
             labels = self.data.iloc[:, 4].to_numpy()  # informativeness is the label column in all other settings.
-            for i, label in enumerate(labels):
-                if label == "Not applicable":
+
+        for i, label in enumerate(labels):
+            if label == "Not applicable":
+                if self.setting == "info_source" or self.setting == "info_type":
+                    labels[i] = "Not labeled"
+                else:
                     labels[i] = "Not related"
 
         if self.setting == "binary":

@@ -18,11 +18,16 @@ class Config:
         self.train = train
         self.model = model
 
+        if self.data['setting'] == 'info_type':
+            self.data['augmentation_path'] += "multiclass"
+        else:
+            self.data['augmentation_path'] += "binary"
+
     def get_number_of_experiments(self):
         return len(self.train['seeds'])
 
     def get_output_size(self):
-        return 2 if self.data['setting'] == 'binary' else 8
+        return 2 if self.data['setting'] == 'binary' else 7
 
     def set_sequence_len(self, xtrain):
         self.model['seq_len'] = xtrain.shape[1]

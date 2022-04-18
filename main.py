@@ -1,4 +1,12 @@
 # -*- coding: utf-8 -*-
+import tensorflow as tf
+import numpy as np
+np.random.seed(54322)
+import random
+import os
+from tfdeterminism import patch
+patch()
+
 from configs.config import CFG
 from model.model_ import Model
 from loaders import dataloader
@@ -7,12 +15,7 @@ from preprocessing import prep
 from evaluation.evaluator import Eval
 from utils import helpers
 
-import tensorflow as tf
-import numpy as np
-import random
-import os
-from tfdeterminism import patch
-patch()
+os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
 
 def set_seeds(seed):
@@ -22,19 +25,19 @@ def set_seeds(seed):
     os.environ["PYTHONHASHSEED"] = str(seed)
 
 
-def op(model_cls, evaluator, seeds, experiment_name,
-             xtrain, ytrain, xtest, ytest):
+def op(config, embedding_matrix, evaluator, seeds, experiment_name,
+             xtrain, ytrain, xtest, ytest, xval, yval):
 
     for i, seed in enumerate(seeds):
         with tf.Session() as sess:
+            model_cls = Model(config=config, emb_mat=embedding_matrix)
             print("experiment " + str(i + 1) + " with seed " + str(seed))
             set_seeds(seed)
-            model_cls.set_seeds(seed)
             # training and evaluation
             model_cls.build_model()
             model_cls.vis_model()
             model_cls.compile_model()
-            history = model_cls.training(xtrain, ytrain)
+            history = model_cls.training(xtrain, ytrain, xval, yval)
             evaluator.evaluation(xtest, ytest, history.history, seed=seed, model=model_cls.model)
             helpers.graph(history.history, log_dir=experiment_name, fig_name="/plots/losses" + str(seed) + ".png")
         tf.reset_default_graph()
@@ -58,15 +61,19 @@ def main_pipeline():
     d_l = dataloader.DataLoader(config)
     data = d_l.load_data()
 
+
     """preprocessing pipeline"""
     preprocessor = prep.Preprocessor(config=config,
                                      data=data)
     tweets, labels = preprocessor.transform_crisis_lex()
     tweets_preped = preprocessor.text_preprocessing(tweets)
-    xtrain, ytrain, xtest, ytest = preprocessor.splitting(tweets_preped, labels)
+    xtrain, ytrain, xtest, ytest, xval, yval = preprocessor.splitting(tweets_preped, labels)
     if config.data["balancing"] != False:
         xtrain, ytrain = preprocessor.balancing(xtrain, ytrain)
-    tokenizer, xtrain, xtest = preprocessor.tokens(train_data=xtrain, test_data=xtest)
+    elif config.data["augmentation"]:
+        #f_name = "multiclass" if config.data["setting"] == "info_type" else "binary"
+        xtrain, ytrain = d_l.augment(xtrain, ytrain, encoder=preprocessor.oh_enc)
+    tokenizer, xtrain, xtest, xval = preprocessor.tokens(train_data=xtrain, test_data=xtest, val_data=xval)
 
     # update config
     config.set_sequence_len(xtrain=xtrain)
@@ -81,16 +88,17 @@ def main_pipeline():
                                                   tokenizer=tokenizer)
 
     """training"""
-    model = Model(config=config, emb_mat=embedding_matrix)
 
     evaluator = Eval(exp_repeats=config.get_number_of_experiments(),
                      n_class=config.get_output_size(),
                      log_dir=config.data['experiment_name'])
     seeds = config.train['seeds']
-    op(model, evaluator, seeds,
+    op(config, embedding_matrix,
+       evaluator, seeds,
        config.data["experiment_name"],
        xtrain, ytrain,
-       xtest, ytest)
+       xtest, ytest,
+       xval, yval)
 
 
 if __name__ == '__main__':
