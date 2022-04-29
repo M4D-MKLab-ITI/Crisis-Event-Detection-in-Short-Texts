@@ -18,6 +18,9 @@ Important distinctions from the transformer architecture:
 * Positional encoding is observed that reduces performance and therefore is not being used.
 * Multi-head attention performs better when input transformations are performed non-linearly.
 
+Other details:
+* Embedding vectors are being calculated with a word2vec model pretrained on google news (by Google). ["link"](https://code.google.com/archive/p/word2vec/)  
+
 ### Cite as:
 Kyriakidis, P., Chatzakou, D., Tsikrika, T., Vrochidis, S., Kompatsiaris, I. (2022). Leveraging Transformer Self Attention Encoder for Crisis Event Detection in Short Texts. In: , et al. Advances in Information Retrieval. ECIR 2022. Lecture Notes in Computer Science, vol 13186. Springer, Cham. https://doi.org/10.1007/978-3-030-99739-7_19
 
